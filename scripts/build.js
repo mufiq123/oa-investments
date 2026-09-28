@@ -51,7 +51,7 @@ function chartSVG(points) {
   const gridVals = [0, yMax / 2, yMax];
   const grid = gridVals.map((v) => `
       <line x1="${PL}" y1="${Y(v).toFixed(1)}" x2="${W - PR}" y2="${Y(v).toFixed(1)}" stroke="var(--rule-strong)" stroke-dasharray="5 5"/>
-      <text x="${PL - 10}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="13" fill="var(--ink-muted)">${short$(v)}</text>`).join('');
+      <text class="money" x="${PL - 10}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="13" fill="var(--ink-muted)">${short$(v)}</text>`).join('');
 
   const n = points.length;
   const tickIdx = [...new Set([0, Math.floor(n * 0.25), Math.floor(n * 0.5), Math.floor(n * 0.75), n - 1])];
@@ -72,7 +72,7 @@ function chartSVG(points) {
     <polygon points="${area}" fill="url(#gg)"/>
     <polyline points="${line}" fill="none" stroke="var(--gold)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="7" fill="var(--surface)" stroke="var(--gold)" stroke-width="3.5"/>
-    <text x="${(lx - 12).toFixed(1)}" y="${(ly - 14).toFixed(1)}" text-anchor="end" font-size="16" font-weight="700" fill="var(--ink-soft)">${money(last.value)}</text>
+    <text class="money" x="${(lx - 12).toFixed(1)}" y="${(ly - 14).toFixed(1)}" text-anchor="end" font-size="16" font-weight="700" fill="var(--ink-soft)">${money(last.value)}</text>
     ${xticks}
   </svg>`;
 }
@@ -109,7 +109,7 @@ if (netDeposits != null) {
     <div class="stats">
       <div><div class="label">Net deposits</div><div class="v money">${money(netDeposits)}</div></div>
       <div><div class="label">Investment gains</div><div class="v ${cls} money">${sign}${money(Math.abs(gains))}</div></div>
-      <div><div class="label">Gain on deposits</div><div class="v ${cls}">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
+      <div><div class="label">Gain on deposits</div><div class="v ${cls} money">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
     </div>
     <div class="fine" style="text-align:left;margin-top:10px">Net deposits${src} · gains derived from current value · ${span}</div>`;
 }
@@ -132,11 +132,11 @@ if (positions.length) {
       <div style="width:46px;height:46px;border-radius:12px;background:var(--chip-bg);color:var(--chip-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">${p.ticker.slice(0, 5)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
-        <div style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sub}</div>
+        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sub}</div>
       </div>
       <div style="text-align:right;flex:none">
         <div class="money" style="font-weight:800;font-size:15.5px">${money(p.value)}</div>
-        <div style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${pct.toFixed(1)}%</div>
+        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${pct.toFixed(1)}%</div>
       </div>
     </div>`;
   }).join('');
@@ -220,7 +220,9 @@ const html = `<!DOCTYPE html>
   .sect h2 { font-size: 19px; font-weight: 800; }
   .sect span { color: var(--ink-muted); font-size: 12.5px; }
   .fine { color: var(--ink-muted); font-size: 11.5px; text-align: center; margin-top: 18px; line-height: 1.6; }
-  .hide-values .money { filter: blur(9px); }
+  /* blur scales with font size so a 12px share count is hidden as well as the 44px total */
+  .hide-values .money { filter: blur(0.4em); }
+  .hide-values text.money { filter: blur(0.45em); }
   .stale { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; font-size: 12.5px; line-height: 1.5; }
   .stale[hidden] { display: none; }
   .stale b { font-weight: 800; }
