@@ -55,8 +55,13 @@ function chartSVG(points) {
 
   const n = points.length;
   const tickIdx = [...new Set([0, Math.floor(n * 0.25), Math.floor(n * 0.5), Math.floor(n * 0.75), n - 1])];
-  const xticks = tickIdx.map((i) => `
-      <text x="${X(t(points[i].date)).toFixed(1)}" y="${H - 12}" text-anchor="middle" font-size="13" fill="var(--ink-muted)">${tickLabel(points[i].date)}</text>`).join('');
+  // The first and last points sit on the plot edges, so a centred label there
+  // would overflow the viewBox and get clipped. Anchor those two inward.
+  const xticks = tickIdx.map((i) => {
+    const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+    return `
+      <text x="${X(t(points[i].date)).toFixed(1)}" y="${H - 12}" text-anchor="${anchor}" font-size="13" fill="var(--ink-muted)">${tickLabel(points[i].date)}</text>`;
+  }).join('');
 
   const last = points[n - 1];
   const lx = X(t(last.date)), ly = Y(last.value);
@@ -111,7 +116,7 @@ if (netDeposits != null) {
       <div><div class="label">Investment gains</div><div class="v ${cls} money">${sign}${money(Math.abs(gains))}</div></div>
       <div><div class="label">Gain on deposits</div><div class="v ${cls} money">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
     </div>
-    <div class="fine" style="text-align:left;margin-top:10px">Net deposits${src} · gains derived from current value · ${span}</div>`;
+    <div class="fine" style="text-align:left;margin-top:10px">Net deposits${src} · gains derived · ${span}</div>`;
 }
 
 // ---- holdings ----
@@ -218,10 +223,14 @@ const html = `<!DOCTYPE html>
   .label { color: var(--ink-muted); font-size: 13px; font-weight: 600; }
   .hero { font-size: 44px; font-weight: 800; letter-spacing: -1px; margin-top: 6px; }
   .hero-sub { color: var(--ink-muted); font-size: 13px; margin-top: 6px; }
-  .stats { display: flex; margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
-  .stats > div { flex: 1; }
-  .stats > div + div { border-left: 1px solid var(--rule); padding-left: 14px; }
-  .stats .v { font-weight: 800; font-size: 16px; margin-top: 3px; }
+  /* Equal columns, and each cell is a flex column whose label absorbs the
+     spare height. A label that wraps to two lines therefore pushes nothing
+     around: all three values still sit on one baseline. */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+  .stats > div { display: flex; flex-direction: column; min-width: 0; padding-right: 10px; }
+  .stats > div + div { border-left: 1px solid var(--rule); padding-left: 12px; }
+  .stats .label { flex: 1; font-size: 12.5px; line-height: 1.35; }
+  .stats .v { font-weight: 800; font-size: 16px; margin-top: 5px; white-space: nowrap; }
   .stats .v.up { color: var(--gold); }
   .stats .v.down { color: var(--loss); }
   .sect { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 4px 10px; }
@@ -261,7 +270,7 @@ const html = `<!DOCTYPE html>
   <div class="sect"><h2>Holdings</h2><span>${positions.length} positions</span></div>
   <div class="card" style="padding-top:6px">${rows}</div>
 
-  <div class="fine">Updated ${prettyDate(asOf)} · refreshes daily at noon Central<br>Data via Plaid (read-only) · may lag Vanguard</div>
+  <div class="fine">Updated ${prettyDate(asOf)} · refreshes daily<br>Data via Plaid (read-only) · may lag Vanguard</div>
 </div>
 <script>
   document.getElementById('eye').addEventListener('click', () => document.body.classList.toggle('hide-values'));

@@ -112,11 +112,23 @@ writeFileSync(
 
 const histPath = join(root, 'data', 'history.json');
 const history = JSON.parse(readFileSync(histPath, 'utf8'));
-if (!history.some((p) => p.date === today)) {
+// Overwrite today's point rather than keeping only the first reading, so the
+// day ends holding its latest value. This also keeps the chart's end label in
+// step with the headline total: the page draws that label from the last
+// history point but takes the headline from latest.json, and with several runs
+// a day those two would otherwise disagree until midnight.
+const existing = history.findIndex((p) => p.date === today);
+if (existing === -1) {
   history.push({ date: today, value: total });
   history.sort((a, b) => (a.date < b.date ? -1 : 1));
-  writeFileSync(histPath, JSON.stringify(history));
-  console.log(`Appended snapshot for ${today}: $${total.toLocaleString('en-US')}`);
+  console.log(`Added today's point (${today}): $${total.toLocaleString('en-US')}`);
+} else if (history[existing].value !== total) {
+  const was = history[existing].value;
+  history[existing].value = total;
+  console.log(
+    `Updated today's point (${today}): $${was.toLocaleString('en-US')} → $${total.toLocaleString('en-US')}`
+  );
 } else {
-  console.log(`Snapshot for ${today} already recorded — total $${total.toLocaleString('en-US')}.`);
+  console.log(`Today's point (${today}) is unchanged at $${total.toLocaleString('en-US')}.`);
 }
+writeFileSync(histPath, JSON.stringify(history));

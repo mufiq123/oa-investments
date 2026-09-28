@@ -2,12 +2,16 @@ name: Daily portfolio refresh
 
 on:
   schedule:
-    # GitHub's scheduler is always UTC and does not follow daylight saving, so
-    # noon in Chicago is two different UTC times across the year. Both of these
-    # fire every day; the "gate" job below works out which one is actually noon
-    # locally and skips the other.
-    - cron: '0 17 * * *' # 12:00 CDT — roughly Mar–Nov
-    - cron: '0 18 * * *' # 12:00 CST — roughly Nov–Mar
+    # Target 9:00, 12:00 and 15:00 in Chicago. GitHub's scheduler is always UTC
+    # and does not follow daylight saving, so each of those needs two entries —
+    # one for CDT (UTC-5) and one for CST (UTC-6). All six fire year-round and
+    # the gate job below admits only the three that are correct for the season.
+    - cron: '0 14 * * *' #  9:00 CDT
+    - cron: '0 15 * * *' #  9:00 CST  / 10:00 CDT
+    - cron: '0 17 * * *' # 12:00 CDT
+    - cron: '0 18 * * *' # 12:00 CST  / 13:00 CDT
+    - cron: '0 20 * * *' # 15:00 CDT
+    - cron: '0 21 * * *' # 15:00 CST  / 16:00 CDT
   workflow_dispatch: # lets you run it manually from the Actions tab
 
 permissions:
@@ -16,40 +20,37 @@ permissions:
   id-token: write
 
 jobs:
-  # Decides whether this particular firing should do the work. Keeps the run to
-  # once a day at noon Central year-round, and lets a failed attempt retry on
-  # the day's later cron instead of losing the snapshot entirely.
+  # Lets a firing through only when it is 9am, noon or 3pm in Chicago, which is
+  # what keeps the schedule at three runs a day on both sides of the daylight
+  # saving change instead of three in winter and six in summer.
   gate:
     runs-on: ubuntu-latest
     outputs:
       go: ${{ steps.check.outputs.go }}
     steps:
-      - uses: actions/checkout@v4
-
       - id: check
         env:
           EVENT: ${{ github.event_name }}
         run: |
-          now=$(TZ=America/Chicago date '+%Y-%m-%d %H:%M %Z')
-          today=$(TZ=America/Chicago date +%F)
           hour=$(TZ=America/Chicago date +%-H)
-          recorded=$(jq -r '.date // ""' data/latest.json 2>/dev/null || echo '')
-          echo "Chicago now: $now"
-          echo "Last snapshot on file: ${recorded:-none}"
+          echo "Chicago now: $(TZ=America/Chicago date '+%Y-%m-%d %H:%M %Z')"
 
           if [ "$EVENT" != schedule ]; then
             echo "Manual run — proceeding regardless of the clock."
             echo 'go=true' >> "$GITHUB_OUTPUT"
-          elif [ "$recorded" = "$today" ]; then
-            echo "Today is already recorded — skipping this firing."
-            echo 'go=false' >> "$GITHUB_OUTPUT"
-          elif [ "$hour" -lt 12 ]; then
-            echo "Still before noon in Chicago, so this is the off-season cron — skipping."
-            echo 'go=false' >> "$GITHUB_OUTPUT"
-          else
-            echo "Noon or later in Chicago and nothing recorded today — proceeding."
-            echo 'go=true' >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          case "$hour" in
+            9|12|15)
+              echo "${hour}:00 in Chicago is a scheduled slot — proceeding."
+              echo 'go=true' >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "${hour}:00 in Chicago is not a slot — this is the off-season cron, skipping."
+              echo 'go=false' >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
   refresh:
     needs: gate
@@ -64,8 +65,8 @@ jobs:
 
       - run: npm install --no-audit --no-fund
 
-      # continue-on-error: if Plaid is not configured yet (or is briefly down),
-      # the page still deploys from the data already committed in data/.
+      # continue-on-error: if Plaid is briefly down, the page still deploys from
+      # the data already committed in data/.
       - name: Pull fresh Vanguard data
         continue-on-error: true
         run: node scripts/fetch.js
@@ -78,12 +79,18 @@ jobs:
       - name: Rebuild the dashboard page
         run: node scripts/build.js
 
+      # Rebase before pushing: three runs a day share a branch with whatever the
+      # previous run committed, and a stale checkout would be rejected.
       - name: Save the new history point
         run: |
           git config user.name "oa-dashboard-bot"
           git config user.email "oa-dashboard-bot@users.noreply.github.com"
           git add data/history.json data/latest.json
-          git diff --cached --quiet || (git commit -m "Daily snapshot $(date -u +%F)" && git push)
+          if ! git diff --cached --quiet; then
+            git commit -m "Snapshot $(TZ=America/Chicago date '+%F %H:%M %Z')"
+            git pull --rebase --autostash origin main
+            git push
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
