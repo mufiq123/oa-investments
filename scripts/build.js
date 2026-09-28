@@ -37,6 +37,9 @@ const tickLabel = (iso) => {
 // Colors are CSS custom properties, so the chart follows the active theme.
 function chartSVG(points) {
   const W = 680, H = 400, PL = 56, PR = 20, PT = 30, PB = 42;
+  // The viewBox starts above y=0 purely to give the scrubber's value label
+  // somewhere to sit when the point being read is at the top of the plot.
+  const VT = -34;
   const t = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d).getTime(); };
   const t0 = t(points[0].date);
   const t1 = t(points[points.length - 1].date);
@@ -78,8 +81,8 @@ function chartSVG(points) {
   }));
 
   return `
-  <svg class="chart" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Portfolio growth chart"
-       data-points='${JSON.stringify(scrubData)}' data-w="${W}" data-pl="${PL}" data-pr="${PR}" data-pt="${PT}">
+  <svg class="chart" viewBox="0 ${VT} ${W} ${H - VT}" style="width:100%;height:auto;display:block" role="img" aria-label="Portfolio growth chart"
+       data-points='${JSON.stringify(scrubData)}' data-w="${W}" data-pl="${PL}" data-pr="${PR}" data-top="${VT + 14}">
     <defs>
       <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.25"/>
@@ -331,7 +334,7 @@ const html = `<!DOCTYPE html>
     var W = +svg.getAttribute('data-w');
     var PL = +svg.getAttribute('data-pl');
     var PR = +svg.getAttribute('data-pr');
-    var PT = +svg.getAttribute('data-pt');
+    var TOP = +svg.getAttribute('data-top'); // highest the label may sit
     var el = function (id) { return svg.querySelector('#' + id); };
     var scrub = el('scrub'), sLine = el('scrubLine'), sDot = el('scrubDot');
     var sVal = el('scrubVal'), sMon = el('scrubMonth');
@@ -359,11 +362,11 @@ const html = `<!DOCTYPE html>
       // keep both labels inside the viewBox no matter which point is picked
       var tx = clamp(p.x, PL + 48, W - PR - 48);
       sVal.setAttribute('x', tx);
-      // 26px of clearance above the dot. The floor is the top of the viewBox
-      // rather than the top of the plot, so the highest points — which is
-      // where the current value sits — can still lift the label clear of the
-      // marker instead of being pinned on top of it.
-      sVal.setAttribute('y', Math.max(p.y - 26, 14));
+      // 56 viewBox units above the dot, which is roughly 26 screen pixels on a
+      // phone once the chart is scaled down to fit. TOP is inside the padding
+      // added above the plot, so a reading on the highest point lifts clear
+      // rather than being pinned onto the marker.
+      sVal.setAttribute('y', Math.max(p.y - 56, TOP));
       sVal.textContent = p.v;
       sMon.setAttribute('x', tx);
       sMon.textContent = p.m;
