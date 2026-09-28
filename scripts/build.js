@@ -265,7 +265,7 @@ const html = `<!DOCTYPE html>
     ${allocBar}
   </div>
 
-  <div class="sect"><h2>Growth</h2><span>${history.length} data points</span></div>
+  <div class="sect"><h2>Growth</h2></div>
   <div class="card">
     ${chartSVG(history)}${statsHTML}
   </div>
