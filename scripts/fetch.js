@@ -53,6 +53,31 @@ function chicagoDate() {
   }).format(new Date());
 }
 
+// Ask Plaid to pull straight from Vanguard before we read holdings. Without
+// this, /investments/holdings/get returns whatever Plaid last cached, which is
+// refreshed on its own once-a-day cadence and may predate this morning's run.
+// /investments/refresh is asynchronous — it returns immediately and the new
+// data lands shortly after — so we give it a grace period before reading.
+// Bundled free on Plaid's Trial plan; metered per call on paid plans, so set
+// PLAID_REFRESH=false to turn it off if this account ever moves to one.
+const REFRESH = (process.env.PLAID_REFRESH ?? 'true') !== 'false';
+const REFRESH_WAIT_MS = Number(process.env.PLAID_REFRESH_WAIT_MS ?? 30000);
+
+if (REFRESH) {
+  try {
+    await plaid.investmentsRefresh({ access_token: PLAID_ACCESS_TOKEN });
+    console.log(`Requested a fresh pull from Vanguard; waiting ${REFRESH_WAIT_MS / 1000}s for it to land.`);
+    await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+  } catch (err) {
+    // A refresh that fails is not fatal: we simply read Plaid's cached
+    // holdings instead, which is exactly the old behaviour.
+    const code = err?.response?.data?.error_code || err?.message || String(err);
+    console.warn(`Refresh request failed (${code}) — falling back to Plaid's cached holdings.`);
+  }
+} else {
+  console.log('PLAID_REFRESH=false — reading cached holdings without an on-demand refresh.');
+}
+
 const resp = await plaid.investmentsHoldingsGet({ access_token: PLAID_ACCESS_TOKEN });
 const { holdings = [], securities = [] } = resp.data;
 const secById = Object.fromEntries(securities.map((s) => [s.security_id, s]));

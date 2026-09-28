@@ -169,6 +169,9 @@ const html = `<!DOCTYPE html>
     --loss: #a8412a;
     --chip-bg: #f5ead3;
     --chip-ink: #8a6a24;
+    --warn-bg: #fdf4e3;
+    --warn-ink: #7a5312;
+    --warn-border: #f0dcb4;
     --shadow: 0 1px 2px rgba(28,25,23,.05);
     --gold-1: #a97e2f; --gold-2: #bd9440; --gold-3: #cfa856;
     --gold-4: #ddbd72; --gold-5: #e8d094; --gold-6: #f0e0b8;
@@ -187,6 +190,9 @@ const html = `<!DOCTYPE html>
       --loss: #e2806a;
       --chip-bg: #3a301d;
       --chip-ink: #e3c47e;
+      --warn-bg: #2e2413;
+      --warn-ink: #edcd8d;
+      --warn-border: #4d3c1d;
       --shadow: 0 1px 2px rgba(0,0,0,.4);
       --gold-1: #d2a44a; --gold-2: #c1913d; --gold-3: #ad7f33;
       --gold-4: #91692a; --gold-5: #765422; --gold-6: #5b401b;
@@ -215,15 +221,20 @@ const html = `<!DOCTYPE html>
   .sect span { color: var(--ink-muted); font-size: 12.5px; }
   .fine { color: var(--ink-muted); font-size: 11.5px; text-align: center; margin-top: 18px; line-height: 1.6; }
   .hide-values .money { filter: blur(9px); }
+  .stale { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; font-size: 12.5px; line-height: 1.5; }
+  .stale[hidden] { display: none; }
+  .stale b { font-weight: 800; }
 </style>
 </head>
-<body>
+<body data-asof="${asOf}">
 <div class="wrap">
   <div class="topbar">
     <img src="assets/logo.jpg" alt="O.A. Investments logo">
     <div><div class="name">O.A. Investments</div><div class="sub">Business account</div></div>
     <button class="eye" id="eye" aria-label="Hide or show dollar amounts">\u{1F441}</button>
   </div>
+
+  <div class="stale" id="stale" hidden><span aria-hidden="true">⚠️</span><span><b>This page may be out of date.</b> <span id="stale-msg"></span></span></div>
 
   <div class="card">
     <div class="label">Current portfolio value</div>
@@ -240,10 +251,28 @@ const html = `<!DOCTYPE html>
   <div class="sect"><h2>Holdings</h2><span>${positions.length} positions</span></div>
   <div class="card" style="padding-top:6px">${rows}</div>
 
-  <div class="fine">Updated ${prettyDate(asOf)} · refreshes every morning<br>Data via Plaid (read-only) · may lag Vanguard</div>
+  <div class="fine">Updated ${prettyDate(asOf)} · refreshes daily at noon Central<br>Data via Plaid (read-only) · may lag Vanguard</div>
 </div>
 <script>
   document.getElementById('eye').addEventListener('click', () => document.body.classList.toggle('hide-values'));
+
+  // Staleness is worked out in the browser, not at build time, so the warning
+  // still appears if the daily workflow stops running and this page is never
+  // rebuilt — the case a build-time banner would silently miss.
+  (function () {
+    var asOf = document.body.getAttribute('data-asof');
+    if (!asOf) return;
+    var p = asOf.split('-').map(Number);
+    if (p.length !== 3 || p.some(isNaN)) return;
+    var snap = new Date(p[0], p[1] - 1, p[2]);
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var days = Math.round((today - snap) / 86400000);
+    if (!(days >= 2)) return; // 0 = today, 1 = before today's noon refresh
+    document.getElementById('stale-msg').textContent =
+      'The last successful update was ' + days + ' days ago, so these figures are not current. The daily refresh may have stopped.';
+    document.getElementById('stale').hidden = false;
+  })();
 </script>
 </body>
 </html>`;
