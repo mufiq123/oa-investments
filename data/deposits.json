@@ -1,0 +1,5 @@
+{
+  "_comment": "Net deposits cannot be derived from history.json (it records value, not cash flow), so this is the one figure you maintain by hand. Update it when you add or withdraw money; the dashboard derives gains and gain-% from it automatically. Withdrawals lower it. The daily workflow never overwrites this file.",
+  "net_deposits": 25910,
+  "note": "per Vanguard"
+}

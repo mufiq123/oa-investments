@@ -69,6 +69,26 @@ Add these four:
 - **Auto-refresh** — every morning the page updates itself with the new value.
 - **Manual refresh** — Actions tab → Run workflow, any time.
 - **History** — the chart gains one point per day from here on.
+- **Appearance** — the page follows your device's light/dark setting automatically.
+
+### The one number you maintain: `data/deposits.json`
+
+`history.json` records what the portfolio is *worth*, not money moving in or out,
+so net deposits cannot be derived from it — a jump from $9,183 to $12,539 could
+be a deposit or a good month, and the data can't tell the difference.
+
+So `data/deposits.json` holds that single figure:
+
+```json
+{ "net_deposits": 25910, "note": "per Vanguard" }
+```
+
+Edit it whenever you add or withdraw money (withdrawals lower it). **Investment
+gains** and **gain on deposits** are then computed from it against the current
+value, so they stay correct on their own as the portfolio moves. Gains show in
+gold when positive and red when negative. If the file is missing or the number
+isn't a positive number, the three stats are hidden rather than shown wrong. The
+daily workflow never touches this file.
 
 ## Honest limits
 
