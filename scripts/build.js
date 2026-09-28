@@ -65,8 +65,21 @@ function chartSVG(points) {
 
   const last = points[n - 1];
   const lx = X(t(last.date)), ly = Y(last.value);
+
+  // Everything the scrubber needs, carried on the element so the page stays a
+  // single self-contained file. Only real history points are listed: the
+  // scrubber snaps to these rather than interpolating, because a value read
+  // off the line between two monthly points is one the portfolio never held.
+  const scrubData = points.map((p) => ({
+    x: +X(t(p.date)).toFixed(1),
+    y: +Y(p.value).toFixed(1),
+    v: money(p.value),
+    m: tickLabel(p.date),
+  }));
+
   return `
-  <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Portfolio growth chart">
+  <svg class="chart" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Portfolio growth chart"
+       data-points='${JSON.stringify(scrubData)}' data-w="${W}" data-pl="${PL}" data-pr="${PR}" data-pt="${PT}">
     <defs>
       <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.25"/>
@@ -76,9 +89,17 @@ function chartSVG(points) {
     ${grid}
     <polygon points="${area}" fill="url(#gg)"/>
     <polyline points="${line}" fill="none" stroke="var(--gold)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="7" fill="var(--surface)" stroke="var(--gold)" stroke-width="3.5"/>
-    <text class="money" x="${(lx - 12).toFixed(1)}" y="${(ly - 14).toFixed(1)}" text-anchor="end" font-size="16" font-weight="700" fill="var(--ink-soft)">${money(last.value)}</text>
-    ${xticks}
+    <circle id="endDot" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="7" fill="var(--surface)" stroke="var(--gold)" stroke-width="3.5"/>
+    <text id="endLabel" class="money" x="${(lx - 12).toFixed(1)}" y="${(ly - 14).toFixed(1)}" text-anchor="end" font-size="16" font-weight="700" fill="var(--ink-soft)">${money(last.value)}</text>
+    <g id="xticks">${xticks}
+    </g>
+    <g id="scrub" opacity="0" pointer-events="none">
+      <line id="scrubLine" y1="${PT}" y2="${H - PB}" stroke="var(--ink-muted)" stroke-width="1" stroke-dasharray="4 4"/>
+      <circle id="scrubDot" r="7" fill="var(--surface)" stroke="var(--gold)" stroke-width="3.5"/>
+      <text id="scrubVal" class="money" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)"></text>
+      <text id="scrubMonth" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)" y="${H - 12}"></text>
+    </g>
+    <rect id="hit" x="0" y="0" width="${W}" height="${H}" fill="transparent"/>
   </svg>`;
 }
 
@@ -238,6 +259,7 @@ const html = `<!DOCTYPE html>
   .sect span { color: var(--ink-muted); font-size: 12.5px; }
   .fine { color: var(--ink-muted); font-size: 11.5px; text-align: center; margin-top: 18px; line-height: 1.6; }
   /* blur scales with font size so a 12px share count is hidden as well as the 44px total */
+  .chart { touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; cursor: crosshair; }
   .hide-values .money { filter: blur(0.4em); }
   /* WebKit does not reliably apply CSS filters to individual SVG elements,
      so on iOS the chart's labels stayed sharp while everything else blurred.
@@ -294,6 +316,80 @@ const html = `<!DOCTYPE html>
     document.getElementById('stale-msg').textContent =
       'The last successful update was ' + days + ' days ago, so these figures are not current. The daily refresh may have stopped.';
     document.getElementById('stale').hidden = false;
+  })();
+
+  // Chart scrubber: press and drag across the graph to read the value at a
+  // point in time. Readings snap to real history points. While scrubbing, the
+  // fixed x-axis labels give way to a single label for the point being read.
+  (function () {
+    var svg = document.querySelector('svg.chart');
+    if (!svg) return;
+    var pts;
+    try { pts = JSON.parse(svg.getAttribute('data-points') || '[]'); } catch (e) { return; }
+    if (!pts.length) return;
+
+    var W = +svg.getAttribute('data-w');
+    var PL = +svg.getAttribute('data-pl');
+    var PR = +svg.getAttribute('data-pr');
+    var PT = +svg.getAttribute('data-pt');
+    var el = function (id) { return svg.querySelector('#' + id); };
+    var scrub = el('scrub'), sLine = el('scrubLine'), sDot = el('scrubDot');
+    var sVal = el('scrubVal'), sMon = el('scrubMonth');
+    var ticks = el('xticks'), endLabel = el('endLabel'), endDot = el('endDot');
+    var active = false;
+
+    function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+    function nearest(clientX) {
+      var r = svg.getBoundingClientRect();
+      if (!r.width) return pts[pts.length - 1];
+      var sx = (clientX - r.left) * (W / r.width);
+      var best = pts[0], bd = Infinity;
+      for (var i = 0; i < pts.length; i++) {
+        var d = Math.abs(pts[i].x - sx);
+        if (d < bd) { bd = d; best = pts[i]; }
+      }
+      return best;
+    }
+
+    function show(clientX) {
+      var p = nearest(clientX);
+      sLine.setAttribute('x1', p.x); sLine.setAttribute('x2', p.x);
+      sDot.setAttribute('cx', p.x); sDot.setAttribute('cy', p.y);
+      // keep both labels inside the viewBox no matter which point is picked
+      var tx = clamp(p.x, PL + 48, W - PR - 48);
+      sVal.setAttribute('x', tx);
+      sVal.setAttribute('y', Math.max(p.y - 18, PT + 13));
+      sVal.textContent = p.v;
+      sMon.setAttribute('x', tx);
+      sMon.textContent = p.m;
+      scrub.setAttribute('opacity', '1');
+      ticks.setAttribute('opacity', '0');
+      endLabel.setAttribute('opacity', '0');
+      endDot.setAttribute('opacity', '0');
+    }
+
+    function hide() {
+      if (!active) return;
+      active = false;
+      scrub.setAttribute('opacity', '0');
+      ticks.setAttribute('opacity', '1');
+      endLabel.setAttribute('opacity', '1');
+      endDot.setAttribute('opacity', '1');
+    }
+
+    svg.addEventListener('pointerdown', function (e) {
+      active = true;
+      if (svg.setPointerCapture) { try { svg.setPointerCapture(e.pointerId); } catch (err) {} }
+      show(e.clientX);
+    });
+    svg.addEventListener('pointermove', function (e) { if (active) show(e.clientX); });
+    // pointercancel fires when the browser takes the gesture over for a
+    // vertical scroll, which is exactly when the scrubber should get out of
+    // the way rather than fight the page.
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+      svg.addEventListener(ev, hide);
+    });
   })();
 </script>
 </body>
