@@ -1,0 +1,51 @@
+name: Daily portfolio refresh
+
+on:
+  schedule:
+    # 12:45 UTC ≈ 7:45 AM Central (approximate; GitHub may delay scheduled runs)
+    - cron: '45 12 * * *'
+  workflow_dispatch: # lets you run it manually from the Actions tab
+
+permissions:
+  contents: write # to commit the updated history.json
+  pages: write
+  id-token: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --no-audit --no-fund
+
+      # continue-on-error: if Plaid is not configured yet (or is briefly down),
+      # the page still deploys from the data already committed in data/.
+      - name: Pull fresh Vanguard data
+        continue-on-error: true
+        run: node scripts/fetch.js
+        env:
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          PLAID_ACCESS_TOKEN: ${{ secrets.PLAID_ACCESS_TOKEN }}
+          PLAID_ENV: ${{ secrets.PLAID_ENV }}
+
+      - name: Rebuild the dashboard page
+        run: node scripts/build.js
+
+      - name: Save the new history point
+        run: |
+          git config user.name "oa-dashboard-bot"
+          git config user.email "oa-dashboard-bot@users.noreply.github.com"
+          git add data/history.json data/latest.json
+          git diff --cached --quiet || (git commit -m "Daily snapshot $(date -u +%F)" && git push)
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - uses: actions/deploy-pages@v4
