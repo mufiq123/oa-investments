@@ -124,6 +124,14 @@ if (positions.length) {
     `</div>`;
   rows = positions.map((p) => {
     const pct = (p.value / total) * 100;
+    // Plaid reports full legal names ("Vanguard World Fund - Vanguard
+    // Information Technology ETF"). The issuing-entity prefix is noise and, in
+    // a nowrap column this narrow, pushes the part that identifies the fund
+    // past the ellipsis. Show whatever follows the first " - " instead, and
+    // fall back to the whole name when there is no prefix to strip. Matching
+    // on spaced " - " leaves hyphenated words like "Exchange-Traded" alone.
+    const cut = p.name.indexOf(' - ');
+    const name = (cut === -1 ? '' : p.name.slice(cut + 3).trim()) || p.name;
     const sub = p.quantity != null && p.price != null
       ? `${p.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })} sh · ${money(p.price)}`
       : 'ETF';
@@ -131,7 +139,7 @@ if (positions.length) {
     <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--rule)">
       <div style="width:46px;height:46px;border-radius:12px;background:var(--chip-bg);color:var(--chip-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">${p.ticker.slice(0, 5)}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+        <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
         <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sub}</div>
       </div>
       <div style="text-align:right;flex:none">
