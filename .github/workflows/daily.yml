@@ -20,9 +20,12 @@ permissions:
   id-token: write
 
 jobs:
-  # Lets a firing through only when it is 9am, noon or 3pm in Chicago, which is
-  # what keeps the schedule at three runs a day on both sides of the daylight
-  # saving change instead of three in winter and six in summer.
+  # Lets a firing through only when the cron that fired it targets 9am, noon or
+  # 3pm in Chicago, which is what keeps the schedule at three runs a day on
+  # both sides of the daylight saving change instead of three in winter and
+  # six in summer. The scheduled hour decides, not the current clock, so a
+  # firing that GitHub's scheduler starts late still runs instead of being
+  # skipped.
   gate:
     runs-on: ubuntu-latest
     outputs:
@@ -31,23 +34,33 @@ jobs:
       - id: check
         env:
           EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
-          hour=$(TZ=America/Chicago date +%-H)
           echo "Chicago now: $(TZ=America/Chicago date '+%Y-%m-%d %H:%M %Z')"
 
-          if [ "$EVENT" != schedule ]; then
+          if [ "$EVENT" = "workflow_dispatch" ]; then
             echo "Manual run — proceeding regardless of the clock."
             echo 'go=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          case "$hour" in
+          # Scheduled run: judge the cron that fired, not the current clock —
+          # GitHub's scheduler is approximate and can start a firing after the
+          # intended hour has already passed. github.event.schedule holds the
+          # cron that fired (e.g. "0 14 * * *"); its hour field is UTC and is
+          # converted here to the Chicago hour for today.
+          set -- $SCHEDULE # split into minute/hour fields: $1 $2 ...
+          utc_hour=$2
+          sched_hour=$(TZ=America/Chicago date -d "$(date -u +%F) ${utc_hour}:00 UTC" +%-H)
+          echo "Fired by cron '${SCHEDULE}': ${utc_hour}:00 UTC is ${sched_hour}:00 in Chicago."
+
+          case "$sched_hour" in
             9|12|15)
-              echo "${hour}:00 in Chicago is a scheduled slot — proceeding."
+              echo "${sched_hour}:00 in Chicago is a scheduled slot — proceeding."
               echo 'go=true' >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "${hour}:00 in Chicago is not a slot — this is the off-season cron, skipping."
+              echo "${sched_hour}:00 in Chicago is not a slot — this is the off-season cron, skipping."
               echo 'go=false' >> "$GITHUB_OUTPUT"
               ;;
           esac
