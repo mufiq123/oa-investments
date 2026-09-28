@@ -2,8 +2,12 @@ name: Daily portfolio refresh
 
 on:
   schedule:
-    # 12:45 UTC ≈ 7:45 AM Central (approximate; GitHub may delay scheduled runs)
-    - cron: '45 12 * * *'
+    # GitHub's scheduler is always UTC and does not follow daylight saving, so
+    # noon in Chicago is two different UTC times across the year. Both of these
+    # fire every day; the "gate" job below works out which one is actually noon
+    # locally and skips the other.
+    - cron: '0 17 * * *' # 12:00 CDT — roughly Mar–Nov
+    - cron: '0 18 * * *' # 12:00 CST — roughly Nov–Mar
   workflow_dispatch: # lets you run it manually from the Actions tab
 
 permissions:
@@ -12,7 +16,44 @@ permissions:
   id-token: write
 
 jobs:
+  # Decides whether this particular firing should do the work. Keeps the run to
+  # once a day at noon Central year-round, and lets a failed attempt retry on
+  # the day's later cron instead of losing the snapshot entirely.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.check.outputs.go }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          now=$(TZ=America/Chicago date '+%Y-%m-%d %H:%M %Z')
+          today=$(TZ=America/Chicago date +%F)
+          hour=$(TZ=America/Chicago date +%-H)
+          recorded=$(jq -r '.date // ""' data/latest.json 2>/dev/null || echo '')
+          echo "Chicago now: $now"
+          echo "Last snapshot on file: ${recorded:-none}"
+
+          if [ "$EVENT" != schedule ]; then
+            echo "Manual run — proceeding regardless of the clock."
+            echo 'go=true' >> "$GITHUB_OUTPUT"
+          elif [ "$recorded" = "$today" ]; then
+            echo "Today is already recorded — skipping this firing."
+            echo 'go=false' >> "$GITHUB_OUTPUT"
+          elif [ "$hour" -lt 12 ]; then
+            echo "Still before noon in Chicago, so this is the off-season cron — skipping."
+            echo 'go=false' >> "$GITHUB_OUTPUT"
+          else
+            echo "Noon or later in Chicago and nothing recorded today — proceeding."
+            echo 'go=true' >> "$GITHUB_OUTPUT"
+          fi
+
   refresh:
+    needs: gate
+    if: needs.gate.outputs.go == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

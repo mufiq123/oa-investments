@@ -5,7 +5,7 @@ A one-page portfolio dashboard that rebuilds itself every morning and is hosted
 
 ## How it works
 
-- A GitHub Action wakes up daily (~7:45 AM Central), pulls your Vanguard
+- A GitHub Action wakes up daily at noon Central, pulls your Vanguard
   business account through Plaid (**read-only** — it can never move money),
   appends the new value to `data/history.json`, rebuilds the page, and publishes it.
 - Your Plaid credentials live in GitHub's secret storage. They are never in the
@@ -93,7 +93,9 @@ daily workflow never touches this file.
 ## Honest limits
 
 - Data comes from Plaid and can lag Vanguard by minutes to hours.
-- GitHub's scheduler is approximate — "7:45 AM" can drift by up to an hour.
+- GitHub's scheduler is approximate — noon can drift by up to an hour or so.
+  The workflow schedules two UTC times and skips the one that isn't noon locally,
+  so the hour stays right through daylight saving changes.
 - The page shows real dollar amounts to anyone with the link. That is the design;
   don't share the link beyond people you'd show the numbers to.
 - If Plaid ever needs you to re-link the account (password change, etc.), repeat
