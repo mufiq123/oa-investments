@@ -239,7 +239,10 @@ const html = `<!DOCTYPE html>
   .fine { color: var(--ink-muted); font-size: 11.5px; text-align: center; margin-top: 18px; line-height: 1.6; }
   /* blur scales with font size so a 12px share count is hidden as well as the 44px total */
   .hide-values .money { filter: blur(0.4em); }
-  .hide-values text.money { filter: blur(0.45em); }
+  /* WebKit does not reliably apply CSS filters to individual SVG elements,
+     so on iOS the chart's labels stayed sharp while everything else blurred.
+     Hide them outright instead — opacity works on SVG text everywhere. */
+  .hide-values text.money { opacity: 0; }
   .stale { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; font-size: 12.5px; line-height: 1.5; }
   .stale[hidden] { display: none; }
   .stale b { font-weight: 800; }

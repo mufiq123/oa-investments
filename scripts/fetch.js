@@ -102,6 +102,17 @@ if (positions.length === 0) {
   process.exit(1);
 }
 
+// Plaid refreshes investments roughly once a day, after market close, so the
+// prices here can lag the live market by a session or more. Log how old they
+// actually are, which is the difference between "the pipeline is broken" and
+// "the upstream feed has not published yet".
+const priceDates = [...new Set(holdings.map((h) => h.institution_price_as_of).filter(Boolean))].sort();
+console.log(
+  priceDates.length
+    ? `Plaid prices are as of ${priceDates.join(', ')}.`
+    : 'Plaid did not report institution_price_as_of for these holdings.'
+);
+
 const total = round2(positions.reduce((s, p) => s + p.value, 0));
 const today = chicagoDate();
 
