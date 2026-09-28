@@ -94,10 +94,11 @@ daily workflow never touches this file.
 
 - Data comes from Plaid and can lag Vanguard by minutes to hours.
 - GitHub's scheduler is approximate, so a run can drift by up to an hour.
-  Because the workflow lists six UTC times and admits only the three that are
-  9am, noon or 3pm in Chicago, a badly delayed firing is skipped rather than
-  run at the wrong hour — the next slot picks it up. The local hours stay
-  correct through daylight saving changes without any edit.
+  The workflow lists six UTC times and admits only the three that are
+  9am, noon or 3pm in Chicago; the gate judges the cron that fired rather
+  than the current clock, so a delayed firing still runs instead of being
+  skipped. The local hours stay correct through daylight saving changes
+  without any edit.
 - The page shows real dollar amounts to anyone with the link. That is the design;
   don't share the link beyond people you'd show the numbers to.
 - If Plaid ever needs you to re-link the account (password change, etc.), repeat
