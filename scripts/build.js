@@ -188,7 +188,7 @@ const html = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161412" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#161412" media="(prefers-color-scheme: dark)"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="icon-192.png"><link rel="manifest" href="site.webmanifest"><meta name="theme-color" content="#b98a2f">
 <title>O.A. Investments</title>
 <style>
   /* Light theme (default). Every color is a token, so the dark override below
@@ -404,7 +404,7 @@ const html = `<!DOCTYPE html>
 
 mkdirSync(join(root, 'dist', 'assets'), { recursive: true });
 writeFileSync(join(root, 'dist', 'index.html'), html);
-copyFileSync(join(root, 'assets', 'logo.jpg'), join(root, 'dist', 'assets', 'logo.jpg'));
+copyFileSync(join(root, 'assets', 'logo.jpg'), join(root, 'dist', 'assets', 'logo.jpg')); copyFileSync(join(root, 'apple-touch-icon.png'), join(root, 'dist', 'apple-touch-icon.png')); copyFileSync(join(root, 'icon-192.png'), join(root, 'dist', 'icon-192.png')); copyFileSync(join(root, 'icon-512.png'), join(root, 'dist', 'icon-512.png')); copyFileSync(join(root, 'site.webmanifest'), join(root, 'dist', 'site.webmanifest'));
 console.log(
   `Wrote dist/index.html (${(html.length / 1024).toFixed(1)} KB), ${history.length} history points, ` +
   `${positions.length} positions, net deposits ` +
