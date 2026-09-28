@@ -359,7 +359,11 @@ const html = `<!DOCTYPE html>
       // keep both labels inside the viewBox no matter which point is picked
       var tx = clamp(p.x, PL + 48, W - PR - 48);
       sVal.setAttribute('x', tx);
-      sVal.setAttribute('y', Math.max(p.y - 18, PT + 13));
+      // 26px of clearance above the dot. The floor is the top of the viewBox
+      // rather than the top of the plot, so the highest points — which is
+      // where the current value sits — can still lift the label clear of the
+      // marker instead of being pinned on top of it.
+      sVal.setAttribute('y', Math.max(p.y - 26, 14));
       sVal.textContent = p.v;
       sMon.setAttribute('x', tx);
       sMon.textContent = p.m;
