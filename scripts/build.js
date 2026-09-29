@@ -168,13 +168,11 @@ if (positions.length) {
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
         <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${priceLine}</div>
-        <div style="display:flex;justify-content:space-between">
-          <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sharesLine}</div>
-          <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${pct.toFixed(1)}%</div>
-        </div>
+        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sharesLine}</div>
       </div>
-      <div style="text-align:right;flex:none">
+      <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;align-self:stretch;flex:none">
         <div class="money" style="font-weight:800;font-size:15.5px">${money(p.value)}</div>
+        <div class="money" style="color:var(--ink-muted);font-size:12.5px">${pct.toFixed(1)}%</div>
       </div>
     </div>`;
   }).join('');
@@ -299,7 +297,7 @@ const html = `<!DOCTYPE html>
   <div class="sect"><h2>Holdings</h2><span>${positions.length} positions</span></div>
   <div class="card" style="padding-top:6px">${rows}</div>
 
-  <div class="fine">Updated ${prettyDate(asOf)}<br>Data via Plaid (read-only) · may lag Vanguard</div>
+  <div class="fine">Updated ${prettyDate(asOf)}</div>
 </div>
 <script>
   document.getElementById('eye').addEventListener('click', () => document.body.classList.toggle('hide-values'));
