@@ -139,8 +139,7 @@ if (netDeposits != null) {
       <div><div class="label">Net deposits</div><div class="v money">${money(netDeposits)}</div></div>
       <div><div class="label">Investment gains</div><div class="v ${cls} money">${sign}${money(Math.abs(gains))}</div></div>
       <div><div class="label">Gain on deposits</div><div class="v ${cls} money">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
-    </div>
-    <div class="fine" style="text-align:left;margin-top:10px">Net deposits${src} · gains derived · ${span}</div>`;
+    </div>`;
 }
 
 // ---- holdings ----
@@ -161,19 +160,21 @@ if (positions.length) {
     // on spaced " - " leaves hyphenated words like "Exchange-Traded" alone.
     const cut = p.name.indexOf(' - ');
     const name = (cut === -1 ? '' : p.name.slice(cut + 3).trim()) || p.name;
-    const sub = p.quantity != null && p.price != null
-      ? `${p.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })} sh · ${money(p.price)}`
-      : 'ETF';
+    const priceLine = p.price != null ? money(p.price) : '';
+    const sharesLine = p.quantity != null ? `${Number(p.quantity).toFixed(2)} shares` : 'ETF';
     return `
     <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--rule)">
       <div style="width:46px;height:46px;border-radius:12px;background:var(--chip-bg);color:var(--chip-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">${p.ticker.slice(0, 5)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
-        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sub}</div>
+        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${priceLine}</div>
+        <div style="display:flex;justify-content:space-between">
+          <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${sharesLine}</div>
+          <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${pct.toFixed(1)}%</div>
+        </div>
       </div>
       <div style="text-align:right;flex:none">
         <div class="money" style="font-weight:800;font-size:15.5px">${money(p.value)}</div>
-        <div class="money" style="color:var(--ink-muted);font-size:12.5px;margin-top:2px">${pct.toFixed(1)}%</div>
       </div>
     </div>`;
   }).join('');
@@ -298,7 +299,7 @@ const html = `<!DOCTYPE html>
   <div class="sect"><h2>Holdings</h2><span>${positions.length} positions</span></div>
   <div class="card" style="padding-top:6px">${rows}</div>
 
-  <div class="fine">Updated ${prettyDate(asOf)} · refreshes daily<br>Data via Plaid (read-only) · may lag Vanguard</div>
+  <div class="fine">Updated ${prettyDate(asOf)}<br>Data via Plaid (read-only) · may lag Vanguard</div>
 </div>
 <script>
   document.getElementById('eye').addEventListener('click', () => document.body.classList.toggle('hide-values'));
