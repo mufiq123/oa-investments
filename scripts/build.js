@@ -12,11 +12,6 @@ const latestPath = join(root, 'data', 'latest.json');
 const latest = existsSync(latestPath) ? JSON.parse(readFileSync(latestPath, 'utf8')) : null;
 
 const total = latest ? latest.total : history[history.length - 1].value;
-// The balance is set in a monospace face, whose advance width is fixed, so a
-// longer number cannot reflow — it would simply overflow the card. Step the
-// size down by digit count instead. 42px fits up to $123,456.78 on a 390px
-// phone; the smaller steps carry it through seven and eight figures.
-const heroFontPx = (n) => (n <= 11 ? 42 : n <= 13 ? 34 : 28);
 const positions = latest ? latest.positions : [];
 const asOf = latest ? latest.date : history[history.length - 1].date;
 
@@ -265,9 +260,7 @@ const html = `<!DOCTYPE html>
   .eye { margin-left: auto; width: 40px; height: 40px; border-radius: 99px; border: 1px solid var(--rule-strong); background: var(--surface); color: inherit; cursor: pointer; font-size: 18px; }
   .card { background: var(--surface); border-radius: 20px; padding: 22px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
   .label { color: var(--ink-muted); font-size: 13px; font-weight: 600; }
-  .hero { font-size: 42px; font-weight: 800; letter-spacing: 1px; margin-top: 6px;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-variant-numeric: tabular-nums; }
+  .hero { font-size: 44px; font-weight: 800; letter-spacing: -1px; margin-top: 6px; }
   .hero-sub { color: var(--ink-muted); font-size: 13px; margin-top: 6px; }
   /* Filled gold banner. Redefining the gold ramp here rather than restyling the
      bar directly is what lets it work: the allocation segments carry their
@@ -316,7 +309,7 @@ const html = `<!DOCTYPE html>
 
   <div class="card hero-card">
     <div class="label">Current portfolio value</div>
-    <div class="hero money" style="font-size:${heroFontPx(money(total).length)}px">${money(total)}</div>
+    <div class="hero money">${money(total)}</div>
     <div class="hero-sub">Portfolio snapshot · ${prettyDate(asOf)}</div>
     ${allocBar}
   </div>
