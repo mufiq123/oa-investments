@@ -1,6 +1,7 @@
 {
-  "_comment": "Net deposits = base + the sum of every entry in ledger. Vanguard only exposes about three months of transactions through Plaid, so 'base' is a one-time anchor covering the history Plaid cannot see; it is yours to set and the workflow never changes it. Everything after that is automatic: each run appends any cash deposit or withdrawal it has not already recorded, keyed by Plaid's transaction id so a deposit ageing out of Plaid's window can never be dropped or double-counted. You should not need to edit this file.",
+  "_comment": "Net deposits = base + the sum of every ledger entry. Vanguard exposes only about three months of transactions through Plaid, so 'base' is a one-time anchor for the history Plaid cannot see, and 'base_through' is the date that anchor is complete through. Deposits dated on or before base_through are already inside base and are never added again; everything after is appended automatically, keyed by Plaid's transaction id so a deposit ageing out of Plaid's window can be neither dropped nor double-counted. You should not need to edit this file.",
   "base": 25910,
+  "base_through": "2026-09-29",
   "note": "per Vanguard",
   "ledger": []
 }

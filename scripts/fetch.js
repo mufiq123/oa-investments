@@ -121,6 +121,80 @@ writeFileSync(
   JSON.stringify({ date: today, total, positions }, null, 2)
 );
 
+// ---- net deposits ledger ----
+// Vanguard exposes only about three months of transactions through Plaid, so
+// deposits.json carries a one-time `base` for the history Plaid cannot see plus
+// a ledger of everything since. Entries are keyed by Plaid's transaction id, so
+// a deposit that later ages out of Plaid's window is neither dropped nor
+// counted twice. `base_through` guards the seam: anything dated on or before it
+// is already inside `base` and must not be added again.
+const CASH_IN = new Set(['deposit', 'contribution']);
+const CASH_OUT = new Set(['withdrawal']);
+const depPath = join(root, 'data', 'deposits.json');
+
+try {
+  const dep = JSON.parse(readFileSync(depPath, 'utf8'));
+  if (!Number.isFinite(dep.base)) throw new Error('deposits.json has no numeric base');
+
+  const day = 86400000;
+  const isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
+  let txns = [];
+  for (let offset = 0; ; ) {
+    const r = await plaid.investmentsTransactionsGet({
+      access_token: PLAID_ACCESS_TOKEN,
+      start_date: isoDay(Date.now() - 120 * day),
+      end_date: isoDay(Date.now() + day),
+      options: { count: 500, offset },
+    });
+    const batch = r.data.investment_transactions || [];
+    txns = txns.concat(batch);
+    if (!batch.length || txns.length >= (r.data.total_investment_transactions ?? txns.length)) break;
+    offset = txns.length;
+  }
+
+  dep.ledger = Array.isArray(dep.ledger) ? dep.ledger : [];
+  const seen = new Set(dep.ledger.map((e) => e.id));
+  const cutoff = dep.base_through || '0000-00-00';
+  let added = 0;
+
+  for (const tx of txns) {
+    if ((tx.type || '') !== 'cash') continue;
+    const sub = (tx.subtype || '').toLowerCase();
+    if (!CASH_IN.has(sub) && !CASH_OUT.has(sub)) continue; // dividends are income, not deposits
+    if (tx.date <= cutoff) continue;                       // already inside base
+    if (seen.has(tx.investment_transaction_id)) continue;
+    // Plaid signs amount negative when cash enters the account, so negate it.
+    dep.ledger.push({ id: tx.investment_transaction_id, date: tx.date, amount: round2(-(tx.amount || 0)) });
+    seen.add(tx.investment_transaction_id);
+    added += 1;
+  }
+
+  if (added) {
+    dep.ledger.sort((a, b) => (a.date < b.date ? -1 : 1));
+    writeFileSync(depPath, JSON.stringify(dep, null, 2));
+  }
+  const ledgerSum = round2(dep.ledger.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
+  console.log(
+    `Net deposits: base $${dep.base.toLocaleString('en-US')} + ledger $${ledgerSum.toLocaleString('en-US')}` +
+      ` = $${round2(dep.base + ledgerSum).toLocaleString('en-US')} (${added} new).`
+  );
+
+  // Any cash subtype we do not classify is surfaced rather than silently
+  // dropped, so a missed deposit type gets noticed.
+  const unknown = [
+    ...new Set(
+      txns
+        .filter((tx) => (tx.type || '') === 'cash')
+        .map((tx) => (tx.subtype || '').toLowerCase())
+        .filter((sub) => !CASH_IN.has(sub) && !CASH_OUT.has(sub) && sub !== 'dividend')
+    ),
+  ];
+  if (unknown.length) console.warn(`Unclassified cash subtypes: ${unknown.join(', ')}`);
+} catch (err) {
+  const code = err?.response?.data?.error_code || err.message;
+  console.warn(`Could not update the deposits ledger (${code}) — leaving it unchanged.`);
+}
+
 const histPath = join(root, 'data', 'history.json');
 const history = JSON.parse(readFileSync(histPath, 'utf8'));
 // Overwrite today's point rather than keeping only the first reading, so the

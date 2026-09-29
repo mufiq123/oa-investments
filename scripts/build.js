@@ -120,10 +120,20 @@ try {
 } catch (err) {
   console.warn(`Could not read data/deposits.json (${err.message}) — hiding the stats row.`);
 }
-const netDeposits =
-  depositsFile && Number.isFinite(depositsFile.net_deposits) && depositsFile.net_deposits > 0
+// base covers the history Plaid cannot reach; the ledger is everything the
+// daily run has recorded since. The older single-number shape still works.
+const netDeposits = (() => {
+  if (!depositsFile) return null;
+  if (Number.isFinite(depositsFile.base)) {
+    const ledger = Array.isArray(depositsFile.ledger) ? depositsFile.ledger : [];
+    const sum = ledger.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+    const total = round2(depositsFile.base + sum);
+    return total > 0 ? total : null;
+  }
+  return Number.isFinite(depositsFile.net_deposits) && depositsFile.net_deposits > 0
     ? depositsFile.net_deposits
     : null;
+})();
 
 let statsHTML = '';
 if (netDeposits != null) {
