@@ -1,5 +1,6 @@
 {
-  "_comment": "Net deposits cannot be derived from history.json (it records value, not cash flow), so this is the one figure you maintain by hand. Update it when you add or withdraw money; the dashboard derives gains and gain-% from it automatically. Withdrawals lower it. The daily workflow never overwrites this file.",
-  "net_deposits": 25910,
-  "note": "per Vanguard"
+  "_comment": "Net deposits = base + the sum of every entry in ledger. Vanguard only exposes about three months of transactions through Plaid, so 'base' is a one-time anchor covering the history Plaid cannot see; it is yours to set and the workflow never changes it. Everything after that is automatic: each run appends any cash deposit or withdrawal it has not already recorded, keyed by Plaid's transaction id so a deposit ageing out of Plaid's window can never be dropped or double-counted. You should not need to edit this file.",
+  "base": 25910,
+  "note": "per Vanguard",
+  "ledger": []
 }
