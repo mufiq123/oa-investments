@@ -1,0 +1,26 @@
+name: Probe investment transactions (temporary)
+
+# Manual only. Read-only: calls Plaid, prints aggregates, commits nothing and
+# deploys nothing. Delete this file once the question is answered.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - name: Ask Plaid for investment transactions
+        run: node scripts/probe-transactions.js
+        env:
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          PLAID_ACCESS_TOKEN: ${{ secrets.PLAID_ACCESS_TOKEN }}
+          PLAID_ENV: ${{ secrets.PLAID_ENV }}
