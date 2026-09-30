@@ -259,7 +259,7 @@ const html = `<!DOCTYPE html>
   .topbar .name { font-weight: 800; font-size: 18px; }
   .topbar .sub { color: var(--ink-muted); font-size: 12.5px; margin-top: 1px; }
   .eye { margin-left: auto; width: 40px; height: 40px; border-radius: 99px; border: 1px solid var(--rule-strong); background: var(--surface); color: inherit; cursor: pointer; font-size: 18px; }
-  .card { background: var(--surface); border-radius: 20px; padding: 22px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .card { background: var(--surface); border-radius: 20px; padding: 22px 20px; margin-bottom: 14px; box-shad.stats > div:nth-child(3) { align-items: flex-end; text-align: right; }ow: var(--shadow); }
   .label { color: var(--ink-muted); font-size: 13px; font-weight: 600; }
   .hero { font-size: 44px; font-weight: 800; letter-spacing: -1px; margin-top: 6px; }
   .hero-sub { color: var(--ink-muted); font-size: 13px; margin-top: 6px; }
@@ -272,14 +272,15 @@ const html = `<!DOCTYPE html>
     --gold-3: rgba(255,255,255,.64); --gold-4: rgba(255,255,255,.50);
     --gold-5: rgba(255,255,255,.38); --gold-6: rgba(255,255,255,.28); }
   .hero-card .label, .hero-card .hero-sub { color: var(--hero-label); }
-  /* Three equal columns in a flex row: first left-aligned, second centred,
-     third right-aligned, with no divider lines. Each cell is a flex column
-     whose label absorbs the spare height, so all three values still sit on one baseline. */
-  .stats { display: flex; justify-content: space-between; margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
-  .stats > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .stats > div:nth-child(2) { text-align: center; } .stats > div:last-child { text-align: right; }
-  .stats .label { flex: 1; font-size: 12.5px; line-height: 1.35; }
-  .stats .v { font-weight: 800; font-size: 16px; margin-top: 5px; white-space: nowrap; }
+  /* Three figures spread edge to edge: left, centre, right. Columns size to
+     their content rather than splitting the width evenly, so a long gains
+     figure on a phone can't run into its neighbour. */
+  .stats { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+  .stats > div { display: flex; flex-direction: column; min-width: 0; }
+  .stats > div:nth-child(2) { align-items: center; text-align: center; } .stats > div:nth-child(3) { align-items: flex-end; text-align: right; }
+  
+  .stats .label { font-size: 12.5px; line-height: 1.35; white-space: nowrap; }
+  .stats .v { font-weight: 800; font-size: clamp(14px, 4.2vw, 16px); margin-top: 5px; white-space: nowrap; }
   .stats .v.up { color: var(--gold); }
   .stats .v.down { color: var(--loss); }
   .sect { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 4px 10px; }
