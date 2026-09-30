@@ -18,6 +18,7 @@ const asOf = latest ? latest.date : history[history.length - 1].date;
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const money = (n) =>
   '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const short$ = (n) => (n >= 1000 ? '$' + Math.round(n / 1000) + 'k' : '$' + Math.round(n));
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const prettyDate = (iso) => {
@@ -146,9 +147,9 @@ if (netDeposits != null) {
   const src = depositsFile.note ? ` ${depositsFile.note}` : '';
   statsHTML = `
     <div class="stats">
-      <div><div class="label">Net deposits</div><div class="v money">${money(netDeposits)}</div></div>
-      <div><div class="label">Investment gains</div><div class="v ${cls} money">${sign}${money(Math.abs(gains))}</div></div>
-      <div><div class="label">Gain on deposits</div><div class="v ${cls} money">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
+      <div><div class="label">Net invested</div><div class="v money">${money(netDeposits)}</div></div>
+      <div><div class="label">Total gains</div><div class="v ${cls} money">${sign}${money(Math.abs(gains))}</div></div>
+      <div><div class="label">Return</div><div class="v ${cls} money">${sign}${Math.abs(gainPct).toFixed(1)}%</div></div>
     </div>`;
 }
 
@@ -271,12 +272,12 @@ const html = `<!DOCTYPE html>
     --gold-3: rgba(255,255,255,.64); --gold-4: rgba(255,255,255,.50);
     --gold-5: rgba(255,255,255,.38); --gold-6: rgba(255,255,255,.28); }
   .hero-card .label, .hero-card .hero-sub { color: var(--hero-label); }
-  /* Equal columns, and each cell is a flex column whose label absorbs the
-     spare height. A label that wraps to two lines therefore pushes nothing
-     around: all three values still sit on one baseline. */
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
-  .stats > div { display: flex; flex-direction: column; min-width: 0; padding-right: 10px; }
-  .stats > div + div { border-left: 1px solid var(--rule); padding-left: 12px; }
+  /* Three equal columns in a flex row: first left-aligned, second centred,
+     third right-aligned, with no divider lines. Each cell is a flex column
+     whose label absorbs the spare height, so all three values still sit on one baseline. */
+  .stats { display: flex; justify-content: space-between; margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+  .stats > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .stats > div:nth-child(2) { text-align: center; } .stats > div:last-child { text-align: right; }
   .stats .label { flex: 1; font-size: 12.5px; line-height: 1.35; }
   .stats .v { font-weight: 800; font-size: 16px; margin-top: 5px; white-space: nowrap; }
   .stats .v.up { color: var(--gold); }
