@@ -61,7 +61,7 @@ function chartSVG(points) {
   const tickIdx = [...new Set([0, Math.floor(n * 0.25), Math.floor(n * 0.5), Math.floor(n * 0.75), n - 1])];
   // The first and last points sit on the plot edges, so a centred label there
   // would overflow the viewBox and get clipped. Anchor those two inward.
-  const xticks = tickIdx.map((i) => {
+  const xticks = tickIdx.filter((i, k, a) => k === a.length - 1 || tickLabel(points[i].date) !== tickLabel(points[a[k + 1]].date)).map((i) => { // drop a tick whose label duplicates the next tick's, so the final date is drawn exactly once
     const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
     return `
       <text x="${X(t(points[i].date)).toFixed(1)}" y="${H - 12}" text-anchor="${anchor}" font-size="13" fill="var(--ink-muted)">${tickLabel(points[i].date)}</text>`;
