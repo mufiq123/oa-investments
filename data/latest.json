@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-02",
-  "total": 32333.5,
+  "date": "2026-10-03",
+  "total": 32202.38,
   "positions": [
     {
       "ticker": "VGT",
@@ -29,20 +29,6 @@
       "value": 808.59,
       "quantity": 32,
       "price": 25.2685
-    },
-    {
-      "ticker": "VFH",
-      "name": "Vanguard World Fund - Vanguard Financials ETF",
-      "value": 68.77,
-      "quantity": 0.5269,
-      "price": 130.52
-    },
-    {
-      "ticker": "VXUS",
-      "name": "Vanguard Star Funds - Vanguard Total International Stock ETF",
-      "value": 62.35,
-      "quantity": 0.7298,
-      "price": 85.43
     },
     {
       "ticker": "VMFXX",
