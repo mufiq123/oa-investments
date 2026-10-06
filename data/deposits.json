@@ -3,5 +3,11 @@
   "base": 25910,
   "base_through": "2026-09-29",
   "note": "per Vanguard",
-  "ledger": []
+  "ledger": [
+    {
+      "id": "ZgEbMZMvK7symEv16wYeCwxge1jpbEIbLm3D9",
+      "date": "2026-10-05",
+      "amount": -140.97
+    }
+  ]
 }
