@@ -154,6 +154,7 @@ try {
 
   dep.ledger = Array.isArray(dep.ledger) ? dep.ledger : [];
   const seen = new Set(dep.ledger.map((e) => e.id));
+  const ignored = new Set(dep.ignored_ids || []);
   const cutoff = dep.base_through || '0000-00-00';
   let added = 0;
 
@@ -163,6 +164,7 @@ try {
     if (!CASH_IN.has(sub) && !CASH_OUT.has(sub)) continue; // dividends are income, not deposits
     if (tx.date <= cutoff) continue;                       // already inside base
     if (seen.has(tx.investment_transaction_id)) continue;
+    if (ignored.has(tx.investment_transaction_id)) continue;
     // Plaid signs amount negative when cash enters the account, so negate it.
     dep.ledger.push({ id: tx.investment_transaction_id, date: tx.date, amount: round2(-(tx.amount || 0)) });
     seen.add(tx.investment_transaction_id);
