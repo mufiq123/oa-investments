@@ -3,12 +3,20 @@
   "base": 25910,
   "base_through": "2026-09-29",
   "note": "per Vanguard",
-  "ignored_ids": ["ZgEbMZMvK7symEv16wYeCwxge1jpbEIbLm3D9", "1rj9OaOzKec36dKRjD8qskZJLZ0azyIYmZw3P"],
+  "ignored_ids": [
+    "ZgEbMZMvK7symEv16wYeCwxge1jpbEIbLm3D9",
+    "1rj9OaOzKec36dKRjD8qskZJLZ0azyIYmZw3P"
+  ],
   "ledger": [
     {
       "id": "D03KywyQVNi6JNOXnw4ef8J6kJZ50XtXZrPJY",
       "date": "2026-10-06",
       "amount": 1750
+    },
+    {
+      "id": "wLMxJ0JjeOc7pDnBAMLzsPQNO5QdZZtKMXaKE",
+      "date": "2026-10-07",
+      "amount": 1891.01
     }
   ]
 }
