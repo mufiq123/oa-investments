@@ -113,7 +113,7 @@ console.log(
     : 'Plaid did not report institution_price_as_of for these holdings.'
 );
 
-const total = round2(positions.reduce((s, p) => s + p.value, 0));
+let total = round2(positions.reduce((s, p) => s + p.value, 0));
 const today = chicagoDate();
 
 writeFileSync(
@@ -197,7 +197,7 @@ try {
   console.warn(`Could not update the deposits ledger (${code}) — leaving it unchanged.`);
 }
 
-const histPath = join(root, 'data', 'history.json');
+/* Confirmed settled cash: Plaid's VMFXX feed has been unreliable (stale $141.01, phantom $1,891.01, then $0 while $1,750 was confirmed settled). If deposits.json carries confirmed_cash, Plaid's VMFXX is trusted only within 1% of it; otherwise the confirmed figure stands in, reduced by any later ledger withdrawals so it cannot go stale. */ try { const depC = JSON.parse(readFileSync(depPath, 'utf8')); const cc = depC.confirmed_cash; if (cc && Number.isFinite(cc.amount) && cc.amount > 0) { const withdrawn = round2((depC.ledger || []).filter((e) => e.date > cc.asof && (Number(e.amount) || 0) < 0).reduce((s, e) => s + Number(e.amount), 0)); const confirmedLeft = Math.max(0, round2(cc.amount + withdrawn)); const plaidCash = round2(holdings.filter((h) => ((secById[h.security_id] || {}).ticker_symbol === 'VMFXX')).reduce((s, h) => s + (h.institution_value ?? (h.quantity ?? 0) * (h.institution_price ?? 0)), 0)); const inBand = plaidCash >= confirmedLeft * 0.99 && plaidCash <= confirmedLeft * 1.01; if (!inBand && confirmedLeft > 0) { for (let i = positions.length - 1; i >= 0; i--) { if (positions[i].ticker === 'VMFXX') positions.splice(i, 1); } positions.push({ ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund', value: confirmedLeft, quantity: confirmedLeft, price: 1 }); positions.sort((a, b) => b.value - a.value); console.log(`Cash reconciliation: Plaid VMFXX $${plaidCash.toLocaleString('en-US')} outside 1% of confirmed $${confirmedLeft.toLocaleString('en-US')} - standing in confirmed figure.`); } } } catch (e) { console.warn(`Could not apply confirmed cash (${e.code || e.message}) - using Plaid holdings as-is.`); } total = round2(positions.reduce((s, p) => s + p.value, 0)); writeFileSync(join(root, 'data', 'latest.json'), JSON.stringify({ date: today, total, positions }, null, 2)); const histPath = join(root, 'data', 'history.json');
 const history = JSON.parse(readFileSync(histPath, 'utf8'));
 // Overwrite today's point rather than keeping only the first reading, so the
 // day ends holding its latest value. This also keeps the chart's end label in
