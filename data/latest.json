@@ -1,6 +1,6 @@
 {
   "date": "2026-10-08",
-  "total": 33829.93,
+  "total": 35579.93,
   "positions": [
     {
       "ticker": "VGT",
@@ -15,6 +15,13 @@
       "value": 5024.34,
       "quantity": 7.0638,
       "price": 711.28
+    },
+    {
+      "ticker": "VMFXX",
+      "name": "Vanguard Federal Money Market Fund",
+      "value": 1750,
+      "quantity": 1750,
+      "price": 1
     },
     {
       "ticker": "VHT",
