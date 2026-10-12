@@ -177,6 +177,11 @@ if (positions.length) {
     const name = (cut === -1 ? '' : p.name.slice(cut + 3).trim()) || p.name;
     const priceLine = p.price != null ? money(p.price) : '';
     const sharesLine = p.quantity != null ? `${Number(p.quantity).toFixed(2)} shares` : 'ETF';
+    // All-time gain on the shares held, against Plaid's cost basis. Blank
+    // when there is no basis (cash) rather than a made-up figure.
+    const gain = p.cost_basis > 0 ? (p.value / p.cost_basis - 1) * 100 : null;
+    const gainLine = gain == null ? ''
+      : `<span style="color:var(${gain >= 0 ? '--gain' : '--loss'})">${gain >= 0 ? '+' : '−'}${Math.abs(gain).toFixed(1)}%</span>`;
     return `
     <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--rule)">
       <div style="width:46px;height:46px;border-radius:12px;background:var(--chip-bg);color:var(--chip-ink);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">${p.ticker.slice(0, 5)}</div>
@@ -187,6 +192,7 @@ if (positions.length) {
       </div>
       <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;align-self:stretch;flex:none">
         <div class="money" style="font-weight:800;font-size:15.5px">${money(p.value)}</div>
+        <div class="money" style="font-size:12.5px;font-weight:700;margin-top:2px">${gainLine}</div>
         <div class="money" style="color:var(--ink-muted);font-size:12.5px">${pct.toFixed(1)}%</div>
       </div>
     </div>`;
@@ -218,6 +224,7 @@ const html = `<!DOCTYPE html>
     --rule-strong: #e7e2d6;
     --gold: #a97e2f;
     --loss: #a8412a;
+    --gain: #1f8a4c;
     --chip-bg: #f5ead3;
     --chip-ink: #8a6a24;
     --warn-bg: #fdf4e3;
@@ -242,6 +249,7 @@ const html = `<!DOCTYPE html>
       --rule-strong: #322d26;
       --gold: #d2a44a;
       --loss: #e2806a;
+      --gain: #4cc37e;
       --chip-bg: #3a301d;
       --chip-ink: #e3c47e;
       --warn-bg: #2e2413;
@@ -263,7 +271,7 @@ const html = `<!DOCTYPE html>
   .topbar .name { font-weight: 800; font-size: 18px; }
   .topbar .sub { color: var(--ink-muted); font-size: 12.5px; margin-top: 1px; }
   .eye { margin-left: auto; width: 40px; height: 40px; border-radius: 99px; border: 1px solid var(--rule-strong); background: var(--surface); color: inherit; cursor: pointer; font-size: 18px; }
-  .card { background: var(--surface); border-radius: 20px; padding: 22px 20px; margin-bottom: 14px; box-shad.stats > div:nth-child(3) { align-items: flex-end; text-align: right; }ow: var(--shadow); }
+  .card { background: var(--surface); border-radius: 20px; padding: 22px 20px; margin-bottom: 14px; box-shadow: var(--shadow); }
   .label { color: var(--ink-muted); font-size: 13px; font-weight: 600; }
   .hero { font-size: 44px; font-weight: 800; letter-spacing: -1px; margin-top: 6px; }
   .hero-sub { color: var(--ink-muted); font-size: 13px; margin-top: 6px; }

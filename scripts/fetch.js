@@ -91,6 +91,9 @@ const positions = holdings
       name: sec.name || 'Unknown holding',
       value,
       quantity: h.quantity ?? null,
+      // What was paid for the shares now held (Vanguard reports FIFO); null
+      // when Plaid has none, e.g. for the settlement fund.
+      cost_basis: Number.isFinite(h.cost_basis) && h.cost_basis > 0 ? round2(h.cost_basis) : null,
       price: h.institution_price ?? null,
     };
   })
