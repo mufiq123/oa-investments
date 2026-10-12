@@ -7,6 +7,7 @@
       "name": "Vanguard World Fund - Vanguard Information Technology ETF",
       "value": 24783.14,
       "quantity": 193.6485,
+      "cost_basis": 19091.57,
       "price": 127.98
     },
     {
@@ -14,6 +15,7 @@
       "name": "Vanguard Index Funds - Vanguard S&P 500 ETF",
       "value": 5054.78,
       "quantity": 7.0638,
+      "cost_basis": 4397.03,
       "price": 715.59
     },
     {
@@ -21,6 +23,7 @@
       "name": "Vanguard World Fund - Vanguard Health Care ETF",
       "value": 1575.62,
       "quantity": 4.9391,
+      "cost_basis": 1554.41,
       "price": 319.01
     },
     {
@@ -28,6 +31,7 @@
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco NASDAQ 100 ETF",
       "value": 1550.35,
       "quantity": 5.011,
+      "cost_basis": 1533.71,
       "price": 309.39
     },
     {
@@ -35,6 +39,7 @@
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco Nasdaq International Innovators 100 ETF",
       "value": 1083.6,
       "quantity": 43,
+      "cost_basis": 1090.29,
       "price": 25.2
     },
     {
@@ -42,6 +47,7 @@
       "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
       "value": 0.95,
       "quantity": 0.95,
+      "cost_basis": null,
       "price": 1
     }
   ]
