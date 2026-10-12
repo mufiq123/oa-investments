@@ -113,7 +113,7 @@ console.log(
     : 'Plaid did not report institution_price_as_of for these holdings.'
 );
 
-let total = round2(positions.reduce((s, p) => s + p.value, 0));
+const total = round2(positions.reduce((s, p) => s + p.value, 0));
 const today = chicagoDate();
 
 writeFileSync(
@@ -139,47 +139,93 @@ try {
   const day = 86400000;
   const isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
   let txns = [];
+  const txSecById = {};
   for (let offset = 0; ; ) {
     const r = await plaid.investmentsTransactionsGet({
       access_token: PLAID_ACCESS_TOKEN,
-      start_date: isoDay(Date.now() - 120 * day),
+      // 730 days is Plaid's maximum; Vanguard may return less, which the
+      // history-range line below reports.
+      start_date: isoDay(Date.now() - 730 * day),
       end_date: isoDay(Date.now() + day),
       options: { count: 500, offset },
     });
     const batch = r.data.investment_transactions || [];
+    for (const s of r.data.securities || []) txSecById[s.security_id] = s;
     txns = txns.concat(batch);
     if (!batch.length || txns.length >= (r.data.total_investment_transactions ?? txns.length)) break;
     offset = txns.length;
   }
 
+  // Vanguard moves cash between the brokerage account and its VMFXX
+  // settlement fund ("Sweep in" / "Sweep out"), and Plaid labels those legs
+  // deposit/withdrawal. They are internal, not money in or out of the account,
+  // so they never count. Only transfers from outside (e.g. "From: THREAD
+  // BANK") do.
+  const tickerOf = (tx) => (txSecById[tx.security_id] || {}).ticker_symbol || '';
+  const isSweep = (tx) => /sweep/i.test(tx.name || '') || tickerOf(tx) === 'VMFXX';
+  // Plaid signs amount negative when cash enters the account, so negate it.
+  const inflow = (tx) => round2(-(tx.amount || 0));
+  const cashFlows = txns.filter((tx) => {
+    const sub = (tx.subtype || '').toLowerCase();
+    return (tx.type || '') === 'cash' && (CASH_IN.has(sub) || CASH_OUT.has(sub)); // dividends are income, not deposits
+  });
+
   dep.ledger = Array.isArray(dep.ledger) ? dep.ledger : [];
-  const seen = new Set(dep.ledger.map((e) => e.id));
   const ignored = new Set(dep.ignored_ids || []);
   const cutoff = dep.base_through || '0000-00-00';
   let added = 0;
+  let removed = 0;
 
-  for (const tx of txns) {
-    if ((tx.type || '') !== 'cash') continue;
-    const sub = (tx.subtype || '').toLowerCase();
-    if (!CASH_IN.has(sub) && !CASH_OUT.has(sub)) continue; // dividends are income, not deposits
-    if (tx.date <= cutoff) continue;                       // already inside base
-    if (seen.has(tx.investment_transaction_id)) continue;
-    if (ignored.has(tx.investment_transaction_id)) continue;
-    // Plaid signs amount negative when cash enters the account, so negate it.
-    dep.ledger.push({ id: tx.investment_transaction_id, date: tx.date, amount: round2(-(tx.amount || 0)) });
-    seen.add(tx.investment_transaction_id);
-    added += 1;
+  // Every transaction Plaid still shows is re-judged on every run, so a
+  // misclassified entry corrects itself; only entries that have aged out of
+  // Plaid's window are kept as recorded.
+  for (const tx of cashFlows) {
+    if (tx.date <= cutoff) continue; // already inside base
+    const id = tx.investment_transaction_id;
+    const sweep = isSweep(tx);
+    const inLedger = dep.ledger.findIndex((e) => e.id === id);
+    let verdict;
+    if (ignored.has(id)) {
+      verdict = `in ignored_ids (sweep rule says ${sweep ? 'sweep' : 'NOT a sweep'})`;
+    } else if (sweep) {
+      verdict = 'sweep, not counted';
+      if (inLedger !== -1) {
+        dep.ledger.splice(inLedger, 1);
+        removed += 1;
+        verdict += ' (removed from ledger)';
+      }
+    } else if (inLedger === -1) {
+      dep.ledger.push({ id, date: tx.date, amount: inflow(tx) });
+      added += 1;
+      verdict = 'counted (new)';
+    } else {
+      verdict = 'counted';
+    }
+    const ticker = tickerOf(tx);
+    console.log(`Cash flow ${tx.date} ${inflow(tx)} "${tx.name || ''}"${ticker ? ` [${ticker}]` : ''}: ${verdict}.`);
   }
 
-  if (added) {
+  if (added || removed) {
     dep.ledger.sort((a, b) => (a.date < b.date ? -1 : 1));
     writeFileSync(depPath, JSON.stringify(dep, null, 2));
   }
   const ledgerSum = round2(dep.ledger.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
   console.log(
     `Net deposits: base $${dep.base.toLocaleString('en-US')} + ledger $${ledgerSum.toLocaleString('en-US')}` +
-      ` = $${round2(dep.base + ledgerSum).toLocaleString('en-US')} (${added} new).`
+      ` = $${round2(dep.base + ledgerSum).toLocaleString('en-US')} (${added} added, ${removed} removed).`
   );
+
+  // How far back Plaid can see, and what it shows for the period base covers.
+  // If Plaid reaches the account's first deposit and this matches base, base
+  // can be derived rather than stored.
+  const dates = txns.map((tx) => tx.date).sort();
+  if (dates.length) {
+    const pre = round2(cashFlows.filter((tx) => tx.date <= cutoff && !isSweep(tx)).reduce((s, tx) => s + inflow(tx), 0));
+    console.log(
+      `Plaid transaction history: ${dates[0]} to ${dates[dates.length - 1]} (${txns.length} transactions).` +
+        ` Non-sweep deposits through ${cutoff}: $${pre.toLocaleString('en-US')} vs base $${dep.base.toLocaleString('en-US')}.`
+    );
+  }
 
   // Any cash subtype we do not classify is surfaced rather than silently
   // dropped, so a missed deposit type gets noticed.
@@ -197,7 +243,7 @@ try {
   console.warn(`Could not update the deposits ledger (${code}) — leaving it unchanged.`);
 }
 
-/* Confirmed settled cash: Plaid's VMFXX feed has been unreliable (stale $141.01, phantom $1,891.01, then $0 while $1,750 was confirmed settled). If deposits.json carries confirmed_cash, Plaid's VMFXX is trusted only within 1% of it; otherwise the confirmed figure stands in, reduced by any later ledger withdrawals so it cannot go stale. */ try { const depC = JSON.parse(readFileSync(depPath, 'utf8')); const cc = depC.confirmed_cash; if (cc && Number.isFinite(cc.amount) && cc.amount > 0) { const withdrawn = round2((depC.ledger || []).filter((e) => e.date > cc.asof && (Number(e.amount) || 0) < 0).reduce((s, e) => s + Number(e.amount), 0)); const confirmedLeft = Math.max(0, round2(cc.amount + withdrawn)); const plaidCash = round2(holdings.filter((h) => ((secById[h.security_id] || {}).ticker_symbol === 'VMFXX')).reduce((s, h) => s + (h.institution_value ?? (h.quantity ?? 0) * (h.institution_price ?? 0)), 0)); const inBand = plaidCash >= confirmedLeft * 0.99 && plaidCash <= confirmedLeft * 1.01; if (!inBand && confirmedLeft > 0) { for (let i = positions.length - 1; i >= 0; i--) { if (positions[i].ticker === 'VMFXX') positions.splice(i, 1); } positions.push({ ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund', value: confirmedLeft, quantity: confirmedLeft, price: 1 }); positions.sort((a, b) => b.value - a.value); console.log(`Cash reconciliation: Plaid VMFXX $${plaidCash.toLocaleString('en-US')} outside 1% of confirmed $${confirmedLeft.toLocaleString('en-US')} - standing in confirmed figure.`); } } } catch (e) { console.warn(`Could not apply confirmed cash (${e.code || e.message}) - using Plaid holdings as-is.`); } total = round2(positions.reduce((s, p) => s + p.value, 0)); writeFileSync(join(root, 'data', 'latest.json'), JSON.stringify({ date: today, total, positions }, null, 2)); const histPath = join(root, 'data', 'history.json');
+const histPath = join(root, 'data', 'history.json');
 const history = JSON.parse(readFileSync(histPath, 'utf8'));
 // Overwrite today's point rather than keeping only the first reading, so the
 // day ends holding its latest value. This also keeps the chart's end label in
