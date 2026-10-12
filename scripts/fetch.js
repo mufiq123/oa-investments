@@ -156,73 +156,60 @@ try {
     offset = txns.length;
   }
 
-  // Vanguard moves cash between the brokerage account and its VMFXX
-  // settlement fund ("Sweep in" / "Sweep out"), and Plaid labels those legs
-  // deposit/withdrawal. They are internal, not money in or out of the account,
-  // so they never count. Only transfers from outside (e.g. "From: THREAD
-  // BANK") do.
-  const tickerOf = (tx) => (txSecById[tx.security_id] || {}).ticker_symbol || '';
-  const isSweep = (tx) => /sweep/i.test(tx.name || '') || tickerOf(tx) === 'VMFXX';
-  // Plaid signs amount negative when cash enters the account, so negate it.
-  const inflow = (tx) => round2(-(tx.amount || 0));
-  const cashFlows = txns.filter((tx) => {
-    const sub = (tx.subtype || '').toLowerCase();
-    return (tx.type || '') === 'cash' && (CASH_IN.has(sub) || CASH_OUT.has(sub)); // dividends are income, not deposits
-  });
+  // What counts as money in or out of the account:
+  // - cash deposit/contribution/withdrawal rows and transfer rows count. Plaid
+  //   signs money leaving the account positive, so -amount is the inflow.
+  // - Excluded, though Plaid files them as deposit/withdrawal: Vanguard's
+  //   moves between the account and its VMFXX settlement fund ("Sweep in" /
+  //   "Sweep out"; checked against live data 2026-10-11), and zero-amount rows,
+  //   which are position changes such as stock splits.
+  const MONEY_KINDS = new Set([...CASH_IN, ...CASH_OUT].map((sub) => `cash/${sub}`));
+  const classify = (tx) => {
+    const kind = `${tx.type || ''}/${(tx.subtype || '').toLowerCase()}`;
+    if (!MONEY_KINDS.has(kind) && tx.type !== 'transfer') return null; // buys, sells, dividends, fees
+    const sec = txSecById[tx.security_id] || {};
+    const moneyMarket = sec.ticker_symbol === 'VMFXX' || (sec.is_cash_equivalent && sec.type !== 'cash');
+    if (/sweep/i.test(tx.name || '') || moneyMarket) return { counted: false, why: 'sweep' };
+    if (!round2(tx.amount || 0)) return { counted: false, why: 'position' };
+    return { counted: true, amount: round2(-tx.amount) };
+  };
 
   dep.ledger = Array.isArray(dep.ledger) ? dep.ledger : [];
   const cutoff = dep.base_through || '0000-00-00';
-  let added = 0;
-  let removed = 0;
+  const tally = { counted: 0, sweep: 0, position: 0, added: 0, removed: 0, changed: 0 };
 
   // Every transaction Plaid still shows is re-judged on every run, so a
   // misclassified entry corrects itself; only entries that have aged out of
   // Plaid's window are kept as recorded.
-  for (const tx of cashFlows) {
+  for (const tx of txns) {
     if (tx.date <= cutoff) continue; // already inside base
+    const c = classify(tx);
+    if (!c) continue;
     const id = tx.investment_transaction_id;
-    const sweep = isSweep(tx);
-    const inLedger = dep.ledger.findIndex((e) => e.id === id);
-    let verdict;
-    if (sweep) {
-      verdict = 'sweep, not counted';
-      if (inLedger !== -1) {
-        dep.ledger.splice(inLedger, 1);
-        removed += 1;
-        verdict += ' (removed from ledger)';
-      }
-    } else if (inLedger === -1) {
-      dep.ledger.push({ id, date: tx.date, amount: inflow(tx) });
-      added += 1;
-      verdict = 'counted (new)';
-    } else {
-      verdict = 'counted';
+    const at = dep.ledger.findIndex((e) => e.id === id);
+    if (!c.counted) {
+      tally[c.why] += 1;
+      if (at !== -1) { dep.ledger.splice(at, 1); tally.removed += 1; }
+      continue;
     }
-    const ticker = tickerOf(tx);
-    console.log(`Cash flow ${tx.date} ${inflow(tx)} "${tx.name || ''}"${ticker ? ` [${ticker}]` : ''}: ${verdict}.`);
+    tally.counted += 1;
+    if (at === -1) { dep.ledger.push({ id, date: tx.date, amount: c.amount }); tally.added += 1; }
+    else if (dep.ledger[at].amount !== c.amount) { dep.ledger[at].amount = c.amount; tally.changed += 1; }
   }
 
-  if (added || removed) {
+  if (tally.added || tally.removed || tally.changed) {
     dep.ledger.sort((a, b) => (a.date < b.date ? -1 : 1));
     writeFileSync(depPath, JSON.stringify(dep, null, 2));
   }
+  // Aggregates only: this repository's Actions logs are public.
   const ledgerSum = round2(dep.ledger.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
+  const dates = txns.map((tx) => tx.date).sort();
   console.log(
     `Net deposits: base $${dep.base.toLocaleString('en-US')} + ledger $${ledgerSum.toLocaleString('en-US')}` +
-      ` = $${round2(dep.base + ledgerSum).toLocaleString('en-US')} (${added} added, ${removed} removed).`
+      ` = $${round2(dep.base + ledgerSum).toLocaleString('en-US')}. Since ${cutoff}: ${tally.counted} money movements counted,` +
+      ` ${tally.sweep} sweeps and ${tally.position} position changes left out; ${tally.added} added, ${tally.removed} removed,` +
+      ` ${tally.changed} changed. Plaid history ${dates[0] || '-'} to ${dates[dates.length - 1] || '-'}.`
   );
-
-  // How far back Plaid can see, and what it shows for the period base covers.
-  // If Plaid reaches the account's first deposit and this matches base, base
-  // can be derived rather than stored.
-  const dates = txns.map((tx) => tx.date).sort();
-  if (dates.length) {
-    const pre = round2(cashFlows.filter((tx) => tx.date <= cutoff && !isSweep(tx)).reduce((s, tx) => s + inflow(tx), 0));
-    console.log(
-      `Plaid transaction history: ${dates[0]} to ${dates[dates.length - 1]} (${txns.length} transactions).` +
-        ` Non-sweep deposits through ${cutoff}: $${pre.toLocaleString('en-US')} vs base $${dep.base.toLocaleString('en-US')}.`
-    );
-  }
 
   // Any cash subtype we do not classify is surfaced rather than silently
   // dropped, so a missed deposit type gets noticed.
