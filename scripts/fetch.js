@@ -122,7 +122,7 @@ writeFileSync(
 );
 
 // ---- net deposits ledger ----
-// Vanguard exposes only about three months of transactions through Plaid, so
+// Plaid shows Vanguard transactions only from Aug 2026 onward, so
 // deposits.json carries a one-time `base` for the history Plaid cannot see plus
 // a ledger of everything since. Entries are keyed by Plaid's transaction id, so
 // a deposit that later ages out of Plaid's window is neither dropped nor
@@ -171,7 +171,6 @@ try {
   });
 
   dep.ledger = Array.isArray(dep.ledger) ? dep.ledger : [];
-  const ignored = new Set(dep.ignored_ids || []);
   const cutoff = dep.base_through || '0000-00-00';
   let added = 0;
   let removed = 0;
@@ -185,9 +184,7 @@ try {
     const sweep = isSweep(tx);
     const inLedger = dep.ledger.findIndex((e) => e.id === id);
     let verdict;
-    if (ignored.has(id)) {
-      verdict = `in ignored_ids (sweep rule says ${sweep ? 'sweep' : 'NOT a sweep'})`;
-    } else if (sweep) {
+    if (sweep) {
       verdict = 'sweep, not counted';
       if (inLedger !== -1) {
         dep.ledger.splice(inLedger, 1);

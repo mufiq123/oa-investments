@@ -71,24 +71,25 @@ Add these four:
 - **History** — the chart gains one point per day, holding that day's latest value.
 - **Appearance** — the page follows your device's light/dark setting automatically.
 
-### The one number you maintain: `data/deposits.json`
+### Net deposits: `data/deposits.json` (automatic)
 
-`history.json` records what the portfolio is *worth*, not money moving in or out,
-so net deposits cannot be derived from it — a jump from $9,183 to $12,539 could
-be a deposit or a good month, and the data can't tell the difference.
+`history.json` records what the portfolio is *worth*, not money moving in or
+out, so net deposits are tracked separately in `data/deposits.json`:
 
-So `data/deposits.json` holds that single figure:
+- **`base`** — the total deposited through `base_through` (Sep 29, 2026, per
+  Vanguard statements). Plaid only shows Vanguard transactions from Aug 2026
+  onward, so this fixed historical figure covers what it cannot see. It never
+  changes.
+- **`ledger`** — every deposit or withdrawal after that, added automatically
+  on each run from Plaid's transactions. Vanguard's internal sweeps into and
+  out of its VMFXX settlement fund ("Sweep in" / "Sweep out") are recognised
+  and left out, since they are not money entering or leaving the account.
+  Every transaction Plaid still shows is re-checked on each run, so a wrong
+  entry corrects itself. Each run's log lists every cash flow and whether it
+  was counted.
 
-```json
-{ "net_deposits": 25910, "note": "per Vanguard" }
-```
-
-Edit it whenever you add or withdraw money (withdrawals lower it). **Investment
-gains** and **gain on deposits** are then computed from it against the current
-value, so they stay correct on their own as the portfolio moves. Gains show in
-gold when positive and red when negative. If the file is missing or the number
-isn't a positive number, the three stats are hidden rather than shown wrong. The
-daily workflow never touches this file.
+Net invested = base + ledger. **Total gains** and **Return** are derived from
+it against the current value. You should not need to edit this file.
 
 ## Honest limits
 
