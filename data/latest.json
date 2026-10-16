@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-15",
-  "total": 34436.19,
+  "date": "2026-10-16",
+  "total": 32945.22,
   "positions": [
     {
       "ticker": "VGT",
@@ -27,14 +27,6 @@
       "price": 329.15
     },
     {
-      "ticker": "VMFXX",
-      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
-      "value": 1532.69,
-      "quantity": 1532.69,
-      "cost_basis": null,
-      "price": 1
-    },
-    {
       "ticker": "HSBC",
       "name": "HSBC Holdings plc - ADR",
       "value": 1512.64,
@@ -49,6 +41,14 @@
       "quantity": 43,
       "cost_basis": 1090.29,
       "price": 24.7194
+    },
+    {
+      "ticker": "VMFXX",
+      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
+      "value": 41.72,
+      "quantity": 41.72,
+      "cost_basis": null,
+      "price": 1
     }
   ]
 }
