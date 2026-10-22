@@ -1,6 +1,6 @@
 {
   "date": "2026-10-22",
-  "total": 32153.47,
+  "total": 32152.3,
   "positions": [
     {
       "ticker": "VGT",
@@ -37,10 +37,10 @@
     {
       "ticker": "QQI",
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco Nasdaq International Innovators 100 ETF",
-      "value": 1053.07,
+      "value": 1051.9,
       "quantity": 43,
       "cost_basis": 1090.29,
-      "price": 24.49
+      "price": 24.4629
     },
     {
       "ticker": "VMFXX",
