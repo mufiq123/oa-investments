@@ -1,46 +1,46 @@
 {
   "date": "2026-11-03",
-  "total": 31075.66,
+  "total": 31344.84,
   "positions": [
     {
       "ticker": "VGT",
       "name": "Vanguard World Fund - Vanguard Information Technology ETF",
-      "value": 22043.01,
+      "value": 22323.8,
       "quantity": 193.6485,
       "cost_basis": 19091.57,
-      "price": 113.83
+      "price": 115.28
     },
     {
       "ticker": "VOO",
       "name": "Vanguard Index Funds - Vanguard S&P 500 ETF",
-      "value": 4883.35,
+      "value": 4899.03,
       "quantity": 7.0638,
       "cost_basis": 4397.03,
-      "price": 691.32
+      "price": 693.54
     },
     {
       "ticker": "VHT",
       "name": "Vanguard World Fund - Vanguard Health Care ETF",
-      "value": 1685.57,
+      "value": 1683.25,
       "quantity": 4.9391,
       "cost_basis": 1554.41,
-      "price": 341.27
+      "price": 340.8
     },
     {
       "ticker": "HSBC",
       "name": "HSBC Holdings plc - ADR",
-      "value": 1374.56,
+      "value": 1351.84,
       "quantity": 16,
       "cost_basis": 1490.97,
-      "price": 85.91
+      "price": 84.49
     },
     {
       "ticker": "QQI",
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco Nasdaq International Innovators 100 ETF",
-      "value": 1047.21,
+      "value": 1044.96,
       "quantity": 43,
       "cost_basis": 1090.29,
-      "price": 24.3538
+      "price": 24.3014
     },
     {
       "ticker": "VMFXX",
