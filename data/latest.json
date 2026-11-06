@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-05",
-  "total": 29649.33,
+  "date": "2026-11-06",
+  "total": 31399.33,
   "positions": [
     {
       "ticker": "VGT",
@@ -17,6 +17,14 @@
       "quantity": 7.0638,
       "cost_basis": 4397.03,
       "price": 673.97
+    },
+    {
+      "ticker": "VMFXX",
+      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
+      "value": 1791.96,
+      "quantity": 1791.96,
+      "cost_basis": null,
+      "price": 1
     },
     {
       "ticker": "VHT",
@@ -41,14 +49,6 @@
       "quantity": 43,
       "cost_basis": 1090.29,
       "price": 23.73
-    },
-    {
-      "ticker": "VMFXX",
-      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
-      "value": 41.96,
-      "quantity": 41.96,
-      "cost_basis": null,
-      "price": 1
     }
   ]
 }
