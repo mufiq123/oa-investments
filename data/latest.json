@@ -1,22 +1,22 @@
 {
-  "date": "2026-11-10",
-  "total": 34060.25,
+  "date": "2026-11-11",
+  "total": 34792.42,
   "positions": [
     {
       "ticker": "VGT",
       "name": "Vanguard World Fund - Vanguard Information Technology ETF",
-      "value": 21402.03,
+      "value": 22021.71,
       "quantity": 193.6485,
       "cost_basis": 19091.57,
-      "price": 110.52
+      "price": 113.72
     },
     {
       "ticker": "VOO",
       "name": "Vanguard Index Funds - Vanguard S&P 500 ETF",
-      "value": 5805.25,
+      "value": 5879.76,
       "quantity": 8.4195,
-      "cost_basis": 4397.03,
-      "price": 689.5
+      "cost_basis": 5330.25,
+      "price": 698.35
     },
     {
       "ticker": "VMFXX",
@@ -29,34 +29,34 @@
     {
       "ticker": "VHT",
       "name": "Vanguard World Fund - Vanguard Health Care ETF",
-      "value": 1722.81,
+      "value": 1725.47,
       "quantity": 4.9391,
       "cost_basis": 1554.41,
-      "price": 348.81
+      "price": 349.35
     },
     {
       "ticker": "HSBC",
       "name": "HSBC Holdings plc - ADR",
-      "value": 1438.08,
+      "value": 1443.2,
       "quantity": 16,
       "cost_basis": 1490.97,
-      "price": 89.88
+      "price": 90.2
     },
     {
       "ticker": "QQI",
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco Nasdaq International Innovators 100 ETF",
-      "value": 1055.67,
+      "value": 1061.67,
       "quantity": 43,
       "cost_basis": 1090.29,
-      "price": 24.5505
+      "price": 24.69
     },
     {
       "ticker": "NVDA",
       "name": "NVIDIA Corp",
-      "value": 844.45,
+      "value": 868.65,
       "quantity": 5,
-      "cost_basis": null,
-      "price": 168.89
+      "cost_basis": 858.7,
+      "price": 173.73
     }
   ]
 }
