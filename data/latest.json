@@ -1,62 +1,62 @@
 {
-  "date": "2026-11-12",
-  "total": 34571.84,
+  "date": "2026-11-13",
+  "total": 32389.49,
   "positions": [
     {
       "ticker": "VGT",
       "name": "Vanguard World Fund - Vanguard Information Technology ETF",
-      "value": 21899.71,
+      "value": 21529.84,
       "quantity": 193.6485,
       "cost_basis": 19091.57,
-      "price": 113.09
+      "price": 111.18
     },
     {
       "ticker": "VOO",
       "name": "Vanguard Index Funds - Vanguard S&P 500 ETF",
-      "value": 5859.97,
+      "value": 5837.91,
       "quantity": 8.4195,
       "cost_basis": 5330.25,
-      "price": 696
-    },
-    {
-      "ticker": "VMFXX",
-      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
-      "value": 1791.96,
-      "quantity": 1791.96,
-      "cost_basis": null,
-      "price": 1
+      "price": 693.38
     },
     {
       "ticker": "VHT",
       "name": "Vanguard World Fund - Vanguard Health Care ETF",
-      "value": 1711.15,
+      "value": 1718.46,
       "quantity": 4.9391,
       "cost_basis": 1554.41,
-      "price": 346.45
+      "price": 347.93
     },
     {
       "ticker": "HSBC",
       "name": "HSBC Holdings plc - ADR",
-      "value": 1425.28,
+      "value": 1433.92,
       "quantity": 16,
       "cost_basis": 1490.97,
-      "price": 89.08
+      "price": 89.62
     },
     {
       "ticker": "QQI",
       "name": "Invesco Exchange-Traded Fund Trust II - Invesco Nasdaq International Innovators 100 ETF",
-      "value": 1052.82,
+      "value": 1055.07,
       "quantity": 43,
       "cost_basis": 1090.29,
-      "price": 24.4843
+      "price": 24.5364
     },
     {
       "ticker": "NVDA",
       "name": "NVIDIA Corp",
-      "value": 830.95,
+      "value": 814.25,
       "quantity": 5,
       "cost_basis": 858.7,
-      "price": 166.19
+      "price": 162.85
+    },
+    {
+      "ticker": "VMFXX",
+      "name": "Vanguard Money Market Reserves - Federal Money Market Fd USD MNT",
+      "value": 0.04,
+      "quantity": 0.04,
+      "cost_basis": null,
+      "price": 1
     }
   ]
 }
